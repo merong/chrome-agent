@@ -1,74 +1,52 @@
-import { clsx } from 'clsx';
-import type { ConnectionStatus } from '@/types';
+import { cn } from '@/utils/cn'
+import type { ClientStatus, ConnectionStatus } from '@/types'
 
 interface StatusIndicatorProps {
-  status: ConnectionStatus;
-  showText?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  status: ClientStatus | ConnectionStatus
+  size?: 'sm' | 'md' | 'lg'
+  showLabel?: boolean
+  className?: string
+}
+
+const sizeClasses = {
+  sm: 'w-2 h-2',
+  md: 'w-2.5 h-2.5',
+  lg: 'w-3 h-3'
 }
 
 const statusConfig: Record<
-  ConnectionStatus,
-  { color: string; text: string; animate: boolean }
+  ClientStatus | ConnectionStatus,
+  { color: string; label: string; animate?: boolean }
 > = {
-  disconnected: {
-    color: 'bg-gray-500',
-    text: '연결 안됨',
-    animate: false,
-  },
-  connecting: {
-    color: 'bg-amber-500',
-    text: '연결 중...',
-    animate: true,
-  },
-  connected: {
-    color: 'bg-emerald-500',
-    text: '연결됨',
-    animate: false,
-  },
-  reconnecting: {
-    color: 'bg-orange-500',
-    text: '재연결 중...',
-    animate: true,
-  },
-  error: {
-    color: 'bg-red-500',
-    text: '연결 오류',
-    animate: false,
-  },
-};
-
-const sizeConfig = {
-  sm: 'w-2 h-2',
-  md: 'w-2.5 h-2.5',
-  lg: 'w-3 h-3',
-};
+  connected: { color: 'bg-success', label: 'Connected' },
+  connecting: { color: 'bg-warning', label: 'Connecting', animate: true },
+  reconnecting: { color: 'bg-warning', label: 'Reconnecting', animate: true },
+  paired: { color: 'bg-success', label: 'Paired' },
+  disconnected: { color: 'bg-foreground-muted', label: 'Disconnected' },
+  error: { color: 'bg-error', label: 'Error' }
+}
 
 export function StatusIndicator({
   status,
-  showText = true,
   size = 'md',
-}: StatusIndicatorProps) {
-  const config = statusConfig[status];
+  showLabel = false,
+  className
+}: StatusIndicatorProps): React.ReactElement {
+  const config = statusConfig[status]
 
   return (
-    <div
-      className="flex items-center gap-1.5"
-      role="status"
-      aria-live="polite"
-      aria-label={`연결 상태: ${config.text}`}
-    >
-      <span
-        className={clsx(
+    <div className={cn('flex items-center gap-1.5', className)}>
+      <div
+        className={cn(
           'rounded-full',
-          sizeConfig[size],
+          sizeClasses[size],
           config.color,
           config.animate && 'animate-pulse'
         )}
       />
-      {showText && (
-        <span className="text-sm text-gray-600">{config.text}</span>
+      {showLabel && (
+        <span className="text-xs text-foreground-secondary">{config.label}</span>
       )}
     </div>
-  );
+  )
 }

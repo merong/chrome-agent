@@ -1,32 +1,53 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Header, StatusBar } from '@/components/layout';
-import { ChatArea, InputArea } from '@/components/chat';
-import { ToastContainer } from '@/components/common';
-import { useWebSocket } from '@/hooks/useWebSocket';
+import { useEffect } from 'react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AppLayout } from '@/components/layout/AppLayout'
+import { SettingsDialog } from '@/components/settings/SettingsDialog'
+import { ErrorBoundary, ToastContainer } from '@/components/common'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+import { useGlobalShortcuts } from '@/hooks/useShortcuts'
+import { useWebSocket } from '@/hooks/useWebSocket'
+import { notificationService } from '@/services/notification'
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60, // 1 minute
+      retry: 1
+    }
+  }
+})
 
-function AppContent() {
+function AppContent(): React.ReactElement {
   // Initialize WebSocket connection
-  useWebSocket();
+  useWebSocket()
+
+  // Initialize global shortcuts
+  useGlobalShortcuts()
+
+  // Initialize notification service
+  useEffect(() => {
+    notificationService.init()
+  }, [])
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <Header />
-      <StatusBar />
-      <ChatArea />
-      <InputArea />
+    <>
+      <AppLayout />
+      <SettingsDialog />
       <ToastContainer />
-    </div>
-  );
+    </>
+  )
 }
 
-function App() {
+function App(): React.ReactElement {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppContent />
-    </QueryClientProvider>
-  );
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <ThemeProvider>
+          <AppContent />
+        </ThemeProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  )
 }
 
-export default App;
+export default App

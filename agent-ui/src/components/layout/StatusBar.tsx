@@ -1,64 +1,95 @@
-import { useAppStore } from '@/stores/appStore';
-import { clsx } from 'clsx';
+import { Wifi, WifiOff, Clock, MessageSquare, FileText, AlertCircle } from 'lucide-react'
+import { cn } from '@/utils/cn'
+import { useConnectionStore } from '@/stores/connectionStore'
+import { useLogStore } from '@/stores/logStore'
+import { useUIStore } from '@/stores/uiStore'
+import { useClientStore } from '@/stores/clientStore'
 
-export function StatusBar() {
-  const serverStatus = useAppStore((state) => state.serverStatus);
-  const extensionStatus = useAppStore((state) => state.extensionStatus);
-  const responseTime = useAppStore((state) => state.responseTime);
+export function StatusBar(): React.ReactElement {
+  const { status, latency, lastError, reconnectAttempts, maxReconnectAttempts } = useConnectionStore()
+  const { entries } = useLogStore()
+  const { logPanelOpen, toggleLogPanel } = useUIStore()
+  const { clients } = useClientStore()
 
-  const serverConnected = serverStatus === 'connected';
-  const extensionConnected = extensionStatus === 'connected';
+  const isConnected = status === 'connected'
+  const isReconnecting = status === 'reconnecting'
+  const hasError = status === 'error' || (status === 'disconnected' && lastError)
+
+  const getStatusText = () => {
+    if (status === 'reconnecting') {
+      return `Reconnecting... (${reconnectAttempts}/${maxReconnectAttempts})`
+    }
+    return {
+      connected: 'Connected',
+      connecting: 'Connecting...',
+      disconnected: 'Disconnected',
+      error: 'Connection Error'
+    }[status]
+  }
+
+  const statusConfig = {
+    connected: { icon: Wifi, color: 'text-success' },
+    connecting: { icon: Wifi, color: 'text-warning' },
+    reconnecting: { icon: Wifi, color: 'text-warning' },
+    disconnected: { icon: WifiOff, color: 'text-foreground-muted' },
+    error: { icon: WifiOff, color: 'text-error' }
+  }[status]
+
+  const StatusIcon = statusConfig.icon
+
+  // Truncate error message for status bar
+  const truncatedError = lastError && lastError.length > 60
+    ? lastError.substring(0, 60) + '...'
+    : lastError
 
   return (
-    <div className="flex items-center justify-between px-6 py-2 bg-gray-50 border-b border-gray-200 text-sm">
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <span
-            className={clsx(
-              'w-2 h-2 rounded-full',
-              serverConnected ? 'bg-emerald-500' : 'bg-gray-400'
-            )}
-          />
-          <span className="text-gray-600">🔌 서버</span>
-          <span
-            className={clsx(
-              serverConnected ? 'text-emerald-600' : 'text-gray-500'
-            )}
-          >
-            {serverConnected ? '연결됨' : '연결 안됨'}
-          </span>
+    <footer className="h-7 flex items-center justify-between px-4 bg-background-secondary border-t border-border text-xs">
+      {/* Left Section */}
+      <div className="flex items-center gap-4 flex-1 min-w-0">
+        {/* Connection Status */}
+        <div className={cn('flex items-center gap-1.5 shrink-0', statusConfig.color)}>
+          <StatusIcon className="w-3.5 h-3.5" />
+          <span>{getStatusText()}</span>
         </div>
 
-        <div className="w-px h-4 bg-gray-300" />
+        {/* Error Message */}
+        {hasError && lastError && (
+          <div className="flex items-center gap-1.5 text-error min-w-0" title={lastError}>
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">{truncatedError}</span>
+          </div>
+        )}
 
-        <div className="flex items-center gap-2">
-          <span
-            className={clsx(
-              'w-2 h-2 rounded-full',
-              extensionConnected ? 'bg-emerald-500' : 'bg-gray-400'
-            )}
-          />
-          <span className="text-gray-600">🧩 크롬 확장</span>
-          <span
-            className={clsx(
-              extensionConnected ? 'text-emerald-600' : 'text-gray-500'
-            )}
-          >
-            {extensionStatus === 'connected'
-              ? '연결됨'
-              : extensionStatus === 'disconnected'
-                ? '연결 끊김'
-                : '대기 중'}
-          </span>
-        </div>
+        {/* Latency */}
+        {isConnected && latency !== null && (
+          <div className="flex items-center gap-1.5 text-foreground-secondary shrink-0">
+            <Clock className="w-3.5 h-3.5" />
+            <span>{latency}ms</span>
+          </div>
+        )}
+
+        {/* Client Count */}
+        {isConnected && (
+          <div className="flex items-center gap-1.5 text-foreground-secondary shrink-0">
+            <span>{clients.length} Client{clients.length !== 1 ? 's' : ''}</span>
+          </div>
+        )}
       </div>
 
-      {responseTime !== null && (
-        <div className="flex items-center gap-2 text-gray-500">
-          <span>⏱️</span>
-          <span>응답시간: {responseTime}ms</span>
-        </div>
-      )}
-    </div>
-  );
+      {/* Right Section */}
+      <div className="flex items-center gap-4">
+        {/* Log Count - Clickable to toggle log panel */}
+        <button
+          onClick={toggleLogPanel}
+          className={cn(
+            'flex items-center gap-1.5 transition-colors',
+            logPanelOpen ? 'text-primary' : 'text-foreground-secondary hover:text-foreground'
+          )}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>{entries.length} logs</span>
+        </button>
+      </div>
+    </footer>
+  )
 }

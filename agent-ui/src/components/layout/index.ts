@@ -1,2 +1,5 @@
-export { Header } from './Header';
-export { StatusBar } from './StatusBar';
+export { AppLayout } from './AppLayout'
+export { TitleBar } from './TitleBar'
+export { Sidebar } from './Sidebar'
+export { MainContent } from './MainContent'
+export { StatusBar } from './StatusBar'

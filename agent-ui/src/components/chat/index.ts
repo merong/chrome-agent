@@ -1,3 +1,7 @@
-export { ChatArea } from './ChatArea';
-export { MessageBubble } from './MessageBubble';
-export { InputArea } from './InputArea';
+export { ChatContainer } from './ChatContainer'
+export { ChatHeader } from './ChatHeader'
+export { MessageList } from './MessageList'
+export { MessageBubble } from './MessageBubble'
+export { ResultViewer } from './ResultViewer'
+export { InputArea } from './InputArea'
+export { TypingIndicator } from './TypingIndicator'

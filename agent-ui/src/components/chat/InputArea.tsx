@@ -1,110 +1,152 @@
-import { useState, useCallback, type KeyboardEvent } from 'react';
-import { clsx } from 'clsx';
-import { useAppStore } from '@/stores/appStore';
-import { useWebSocket } from '@/hooks/useWebSocket';
+import { useState, useRef, useEffect } from 'react'
+import { Send, FileText, X } from 'lucide-react'
+import { cn } from '@/utils/cn'
+import { useChatStore } from '@/stores/chatStore'
+import { TemplateList } from '@/components/templates'
+import type { ChatMessage } from '@/types'
 
-const SUGGESTION_EXAMPLES = [
-  '쿠키 추출해줘',
-  '상품 목록 가져와',
-  '폼 정보 확인',
-  '페이지 정보',
-];
+interface InputAreaProps {
+  clientId: string
+  disabled?: boolean
+}
 
-export function InputArea() {
-  const [input, setInput] = useState('');
-  const { sendChat, isConnected } = useWebSocket();
-  const serverStatus = useAppStore((state) => state.serverStatus);
-  const extensionStatus = useAppStore((state) => state.extensionStatus);
-  const currentExecution = useAppStore((state) => state.currentExecution);
+export function InputArea({ clientId, disabled }: InputAreaProps): React.ReactElement {
+  const [message, setMessage] = useState('')
+  const [showTemplates, setShowTemplates] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const { addMessage, setCurrentExecution } = useChatStore()
 
-  const isReady =
-    serverStatus === 'connected' && extensionStatus === 'connected';
-  const isProcessing =
-    currentExecution === 'sending' ||
-    currentExecution === 'processing' ||
-    currentExecution === 'executing';
+  const handleSelectTemplate = (content: string) => {
+    setMessage(content)
+    setShowTemplates(false)
+    textareaRef.current?.focus()
+  }
 
-  const handleSend = useCallback(() => {
-    const trimmed = input.trim();
-    if (!trimmed || !isReady || isProcessing) return;
-
-    sendChat(trimmed);
-    setInput('');
-  }, [input, isReady, isProcessing, sendChat]);
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current
+    if (textarea) {
+      textarea.style.height = 'auto'
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`
     }
-  };
+  }, [message])
 
-  const handleSuggestionClick = (suggestion: string) => {
-    setInput(suggestion);
-  };
+  const handleSubmit = () => {
+    const trimmed = message.trim()
+    if (!trimmed || disabled) return
+
+    // Add user message
+    const userMessage: ChatMessage = {
+      id: `msg-${Date.now()}`,
+      clientId,
+      type: 'user',
+      content: trimmed,
+      timestamp: new Date(),
+      status: 'sending'
+    }
+    addMessage(clientId, userMessage)
+
+    // Clear input
+    setMessage('')
+
+    // Set execution status
+    setCurrentExecution({ isExecuting: true, currentStep: 'Processing...' })
+
+    // TODO: Send via WebSocket
+    // For now, simulate a response after a delay
+    setTimeout(() => {
+      const aiMessage: ChatMessage = {
+        id: `msg-${Date.now()}`,
+        clientId,
+        type: 'ai',
+        content: 'Command received. Processing...',
+        timestamp: new Date(),
+        status: 'success'
+      }
+      addMessage(clientId, aiMessage)
+      setCurrentExecution({ isExecuting: false })
+    }, 1000)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault()
+      handleSubmit()
+    }
+  }
 
   return (
-    <div className="border-t border-gray-200 bg-white">
-      {/* Suggestion Bar */}
-      <div className="px-6 py-2 bg-gray-50 border-b border-gray-100">
-        <div className="flex items-center gap-2 text-sm">
-          <span className="text-gray-500">💡</span>
-          <div className="flex gap-2 overflow-x-auto">
-            {SUGGESTION_EXAMPLES.map((example) => (
+    <div className="relative border-t border-border bg-background p-4">
+      {/* Template Popup */}
+      {showTemplates && (
+        <div className="absolute bottom-full left-0 right-0 mb-2 mx-4">
+          <div className="bg-background border border-border rounded-lg shadow-xl max-h-[400px] overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+              <span className="text-sm font-medium text-foreground">Select Template</span>
               <button
-                key={example}
-                onClick={() => handleSuggestionClick(example)}
-                disabled={!isReady}
-                className={clsx(
-                  'px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors',
-                  isReady
-                    ? 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300'
-                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                )}
+                onClick={() => setShowTemplates(false)}
+                className="p-1 rounded hover:bg-background-secondary text-foreground-muted hover:text-foreground"
               >
-                {example}
+                <X className="w-4 h-4" />
               </button>
-            ))}
+            </div>
+            <div className="max-h-[350px] overflow-y-auto">
+              <TemplateList
+                onSelectTemplate={handleSelectTemplate}
+                onClose={() => setShowTemplates(false)}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Input Area */}
-      <div className="flex items-center gap-3 p-4">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
+      <div className="flex items-end gap-2">
+        {/* Template Button */}
+        <button
+          onClick={() => setShowTemplates(!showTemplates)}
+          disabled={disabled}
+          className={cn(
+            'flex items-center justify-center w-10 h-10 rounded-lg',
+            'border border-border bg-background',
+            'hover:bg-background-secondary transition-colors',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+            showTemplates && 'bg-background-secondary'
+          )}
+          title="Templates"
+        >
+          <FileText className="w-5 h-5 text-foreground-muted" />
+        </button>
+
+        <textarea
+          ref={textareaRef}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={
-            !isConnected
-              ? '서버 연결 중...'
-              : extensionStatus !== 'connected'
-                ? '크롬 확장 연결을 기다리는 중...'
-                : '메시지를 입력하세요...'
-          }
-          disabled={!isReady || isProcessing}
-          className={clsx(
-            'flex-1 px-4 py-3 rounded-xl border transition-colors',
-            'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
-            isReady && !isProcessing
-              ? 'bg-white border-gray-300 text-gray-900'
-              : 'bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed'
+          disabled={disabled}
+          placeholder="Enter a command... (Ctrl+Enter to send)"
+          rows={1}
+          className={cn(
+            'flex-1 resize-none rounded-lg border border-input bg-background px-4 py-2',
+            'text-sm placeholder:text-foreground-muted',
+            'focus:outline-none focus:ring-2 focus:ring-ring',
+            'disabled:opacity-50 disabled:cursor-not-allowed',
+            'min-h-[40px] max-h-[150px]'
           )}
         />
+
         <button
-          onClick={handleSend}
-          disabled={!input.trim() || !isReady || isProcessing}
-          className={clsx(
-            'px-6 py-3 rounded-xl font-medium transition-colors',
-            input.trim() && isReady && !isProcessing
-              ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+          onClick={handleSubmit}
+          disabled={disabled || !message.trim()}
+          className={cn(
+            'flex items-center justify-center w-10 h-10 rounded-lg',
+            'bg-primary text-primary-foreground',
+            'hover:bg-primary-hover transition-colors',
+            'disabled:opacity-50 disabled:cursor-not-allowed'
           )}
         >
-          {isProcessing ? '처리 중...' : '전송'}
+          <Send className="w-5 h-5" />
         </button>
       </div>
     </div>
-  );
+  )
 }

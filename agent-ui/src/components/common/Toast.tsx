@@ -1,69 +1,81 @@
-import { clsx } from 'clsx';
-import { useAppStore } from '@/stores/appStore';
-import type { ToastType } from '@/types';
+import { useEffect, useState } from 'react'
+import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react'
+import { cn } from '@/utils/cn'
 
-const toastConfig: Record<
-  ToastType,
-  { bg: string; border: string; icon: string }
-> = {
-  success: {
-    bg: 'bg-emerald-50',
-    border: 'border-emerald-500',
-    icon: '✅',
-  },
-  error: {
-    bg: 'bg-red-50',
-    border: 'border-red-500',
-    icon: '❌',
-  },
-  warning: {
-    bg: 'bg-amber-50',
-    border: 'border-amber-500',
-    icon: '⚠️',
-  },
-  info: {
-    bg: 'bg-blue-50',
-    border: 'border-blue-500',
-    icon: 'ℹ️',
-  },
-};
+export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
-export function ToastContainer() {
-  const toasts = useAppStore((state) => state.toasts);
-  const removeToast = useAppStore((state) => state.removeToast);
+export interface ToastProps {
+  id: string
+  type: ToastType
+  title: string
+  message?: string
+  duration?: number
+  onClose: (id: string) => void
+}
 
-  if (toasts.length === 0) return null;
+const icons: Record<ToastType, React.ElementType> = {
+  success: CheckCircle,
+  error: AlertCircle,
+  warning: AlertTriangle,
+  info: Info
+}
+
+const styles: Record<ToastType, string> = {
+  success: 'bg-success/10 border-success/50 text-success',
+  error: 'bg-error/10 border-error/50 text-error',
+  warning: 'bg-warning/10 border-warning/50 text-warning',
+  info: 'bg-info/10 border-info/50 text-info'
+}
+
+export function Toast({
+  id,
+  type,
+  title,
+  message,
+  duration = 5000,
+  onClose
+}: ToastProps): React.ReactElement {
+  const [isExiting, setIsExiting] = useState(false)
+  const Icon = icons[type]
+
+  useEffect(() => {
+    if (duration > 0) {
+      const timer = setTimeout(() => {
+        handleClose()
+      }, duration)
+      return () => clearTimeout(timer)
+    }
+  }, [duration])
+
+  const handleClose = () => {
+    setIsExiting(true)
+    setTimeout(() => onClose(id), 200)
+  }
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
-      {toasts.slice(-3).map((toast) => {
-        const config = toastConfig[toast.type];
-
-        return (
-          <div
-            key={toast.id}
-            className={clsx(
-              'flex items-center gap-3 px-4 py-3 rounded-lg border-l-4 shadow-md',
-              'animate-slide-in-right',
-              config.bg,
-              config.border
-            )}
-            role="alert"
-          >
-            <span className="text-lg">{config.icon}</span>
-            <span className="text-sm text-gray-700 flex-1">
-              {toast.message}
-            </span>
-            <button
-              onClick={() => removeToast(toast.id)}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label="닫기"
-            >
-              ✕
-            </button>
-          </div>
-        );
-      })}
+    <div
+      className={cn(
+        'flex items-start gap-3 p-4 rounded-lg border shadow-lg',
+        'transform transition-all duration-200 ease-out',
+        isExiting ? 'opacity-0 translate-x-full' : 'opacity-100 translate-x-0',
+        styles[type]
+      )}
+      role="alert"
+    >
+      <Icon className="w-5 h-5 flex-shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm">{title}</p>
+        {message && (
+          <p className="mt-1 text-xs opacity-80">{message}</p>
+        )}
+      </div>
+      <button
+        onClick={handleClose}
+        className="flex-shrink-0 p-1 rounded hover:bg-black/10 transition-colors"
+        aria-label="Close"
+      >
+        <X className="w-4 h-4" />
+      </button>
     </div>
-  );
+  )
 }

@@ -1,0 +1,123 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "copy": "Copy",
+    "copied": "Copied",
+    "export": "Export",
+    "import": "Import",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "warning": "Warning",
+    "info": "Info",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "reset": "Reset",
+    "settings": "Settings",
+    "all": "All"
+  },
+  "app": {
+    "name": "Chrome Agent",
+    "description": "AI-powered browser automation"
+  },
+  "connection": {
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "connecting": "Connecting...",
+    "reconnecting": "Reconnecting...",
+    "error": "Connection error",
+    "connect": "Connect",
+    "disconnect": "Disconnect"
+  },
+  "client": {
+    "title": "Clients",
+    "noClients": "No clients connected",
+    "selectClient": "Select a client",
+    "rename": "Rename",
+    "remove": "Remove client"
+  },
+  "chat": {
+    "placeholder": "Enter a command... (Ctrl+Enter to send)",
+    "send": "Send",
+    "noMessages": "No messages",
+    "clearHistory": "Clear chat history",
+    "processing": "Processing...",
+    "executing": "Executing..."
+  },
+  "log": {
+    "title": "Logs",
+    "noLogs": "No logs",
+    "clear": "Clear logs",
+    "pause": "Pause",
+    "resume": "Resume",
+    "export": "Export logs",
+    "inbound": "Inbound",
+    "outbound": "Outbound"
+  },
+  "template": {
+    "title": "Templates",
+    "noTemplates": "No templates",
+    "create": "New Template",
+    "edit": "Edit Template",
+    "delete": "Delete Template",
+    "name": "Name",
+    "content": "Content",
+    "description": "Description",
+    "category": "Category",
+    "usageCount": "Usage count"
+  },
+  "settings": {
+    "title": "Settings",
+    "server": {
+      "title": "Server",
+      "url": "Server URL",
+      "autoConnect": "Auto connect",
+      "reconnect": "Reconnect settings"
+    },
+    "ui": {
+      "title": "UI",
+      "theme": "Theme",
+      "themeLight": "Light",
+      "themeDark": "Dark",
+      "themeSystem": "System",
+      "language": "Language",
+      "fontSize": "Font size"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "desktop": "Desktop notifications",
+      "sound": "Sound",
+      "connectionStatus": "Connection status",
+      "commandComplete": "Command complete"
+    },
+    "shortcuts": {
+      "title": "Shortcuts",
+      "sendMessage": "Send message",
+      "newConversation": "New conversation",
+      "openSettings": "Open settings",
+      "toggleLogPanel": "Toggle log panel"
+    },
+    "about": {
+      "title": "About",
+      "version": "Version",
+      "description": "Description"
+    }
+  },
+  "update": {
+    "checking": "Checking for updates...",
+    "available": "New version available",
+    "notAvailable": "You are up to date",
+    "downloading": "Downloading...",
+    "downloaded": "Download complete",
+    "install": "Install and restart",
+    "later": "Later"
+  }
+}
